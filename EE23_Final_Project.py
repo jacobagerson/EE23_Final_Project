@@ -19,8 +19,8 @@ plt.title('Audio Waveform')
 plt.xlabel('Time (s)')
 plt.ylabel('Amplitude')
 plt.tight_layout()
-plt.show()
 plt.savefig('imgs/time_domain_beginning_waveform.png', dpi=150, bbox_inches='tight')
+plt.show()
 
 #Frequency Domain Plot
 D = librosa.stft(y)
@@ -31,8 +31,9 @@ librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='log')
 plt.title('Spectrogram (Power Spectrum)')
 plt.colorbar(label='Power (dB)')
 plt.tight_layout()
-plt.show()
 plt.savefig('imgs/frequency_domain_beginning_waveform.png', dpi=150, bbox_inches='tight')
+plt.show()
+
 #Let's calculate the Nyquist frequency and then sample the audio file at that frequency using librosa
 
 nyquist_freq = sr / 2
