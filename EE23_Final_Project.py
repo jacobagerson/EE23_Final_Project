@@ -34,7 +34,41 @@ plt.tight_layout()
 plt.savefig('imgs/frequency_domain_beginning_waveform.png', dpi=150, bbox_inches='tight')
 plt.show()
 
+
+#We have our audio file loaded and visualized
+
+
+stft_result = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
+
+
+
+
+   42
+   43         print("STFT complete. Shape of the complex-valued spectrogram:", stft_result.shape)
+   44
+   45         # The stft_result is a complex-valued matrix where rows are frequency bins
+   46         # and columns are time frames. For analysis, we convert it to a
+   47         # magnitude spectrogram and often put it on a logarithmic (decibel) scale.
+   48
+   49         magnitude_spectrogram = np.abs(stft_result)
+   50         db_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
+   51
+   52         print("Converted to a decibel-scaled spectrogram.")
+   53
+   54         # --- Visualization of the Spectrogram ---
+   55         print("Plotting the spectrogram...")
+   56         plt.figure(figsize=(14, 5))
+   57         librosa.display.specshow(db_spectrogram, sr=sr, hop_length=HOP_LENGTH, x_axis='time', y_axis='log')
+   58
+   59         plt.title('Log-Frequency Power Spectrogram')
+   60         plt.xlabel('Time (s)')
+   61         plt.ylabel('Frequency (Hz)')
+   62         plt.colorbar(format='%+2.0f dB', label='Decibels (dB)')
+   63         plt.tight_layout()
+   64         plt.show()
+
+
 #Let's calculate the Nyquist frequency and then sample the audio file at that frequency using librosa
 
-nyquist_freq = sr / 2
-print(f"Nyquist Frequency: {nyquist_freq} Hz")
+# nyquist_freq = sr / 2
+# print(f"Nyquist Frequency: {nyquist_freq} Hz")
