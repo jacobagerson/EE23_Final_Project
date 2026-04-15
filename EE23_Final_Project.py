@@ -38,37 +38,39 @@ plt.show()
 #We have our audio file loaded and visualized
 
 
+  # --- STFT/Spectrogram Parameters (Crucial for report analysis) ---
+ # n_fft: The length of the Fast Fourier Transform window.
+# It determines the frequency resolution of the spectrogram.
+# A common value is 2048.
+FFT_LENGTH = 2048
+
+# hop_length: The number of audio samples between adjacent STFT columns.
+# It determines the time resolution of the spectrogram.
+# A common value is 512, which is FFT_LENGTH / 4.
+HOP_LENGTH = 512
+
+# It slides a window (like a Hann window) across the audio signal, taking brief FFTs at each step. This generates a 2D spectrogram (Frequency vs. Time), giving you both the pitch and the exact timestamp, which is absolutely required to generate accurate MIDI "Note ON" and "Note OFF" events. The STFT is a powerful tool for analyzing the frequency content of audio signals over time, making it ideal for tasks like pitch detection and transcription. Necessary for generating discrete MIDI events
 stft_result = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
 
+magnitude_spectrogram = np.abs(stft_result)
+db_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
+
+print("STFT complete. Shape of the complex-valued spectrogram:", stft_result.shape)
+
+plt.figure(figsize=(14, 5))
+librosa.display.specshow(db_spectrogram, sr=sr, hop_length=HOP_LENGTH, x_axis='time', y_axis='log')
+#    58
+plt.title('Log-Frequency Power Spectrogram')
+plt.xlabel('Time (s)')
+plt.ylabel('Frequency (Hz)')
+plt.colorbar(format='%+2.0f dB', label='Decibels (dB)')
+plt.tight_layout()
+plt.show()
+plt.savefig('imgs/log_frequency_power_spectrogram.png', dpi=150, bbox_inches='tight')
 
 
 
-   42
-   43         print("STFT complete. Shape of the complex-valued spectrogram:", stft_result.shape)
-   44
-   45         # The stft_result is a complex-valued matrix where rows are frequency bins
-   46         # and columns are time frames. For analysis, we convert it to a
-   47         # magnitude spectrogram and often put it on a logarithmic (decibel) scale.
-   48
-   49         magnitude_spectrogram = np.abs(stft_result)
-   50         db_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
-   51
-   52         print("Converted to a decibel-scaled spectrogram.")
-   53
-   54         # --- Visualization of the Spectrogram ---
-   55         print("Plotting the spectrogram...")
-   56         plt.figure(figsize=(14, 5))
-   57         librosa.display.specshow(db_spectrogram, sr=sr, hop_length=HOP_LENGTH, x_axis='time', y_axis='log')
-   58
-   59         plt.title('Log-Frequency Power Spectrogram')
-   60         plt.xlabel('Time (s)')
-   61         plt.ylabel('Frequency (Hz)')
-   62         plt.colorbar(format='%+2.0f dB', label='Decibels (dB)')
-   63         plt.tight_layout()
-   64         plt.show()
+# #Let's calculate the Nyquist frequency and then sample the audio file at that frequency using librosa
 
-
-#Let's calculate the Nyquist frequency and then sample the audio file at that frequency using librosa
-
-# nyquist_freq = sr / 2
-# print(f"Nyquist Frequency: {nyquist_freq} Hz")
+# # nyquist_freq = sr / 2
+# # print(f"Nyquist Frequency: {nyquist_freq} Hz")
