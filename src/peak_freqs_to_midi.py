@@ -45,6 +45,7 @@ max_loudness = np.max(peak_mags)
 # Map to 0-127, round it, and ensure it's an integer
 velocities = np.clip(np.round((peak_mags / max_loudness) * 127), 0, 127).astype(int)
 
+
 notes = []
 
 for j in peak_freqs:
@@ -53,17 +54,9 @@ for j in peak_freqs:
 
 midi_notes = []
 
+print(notes[:20])
+
 for i in notes:
     midi_notes.append(librosa.note_to_midi(i))
 
-
-for i in range(3000):
-    print("midi note: ", str(midi_notes[i]))
-    print("Velocity", str(velocities[i]))
-
-
-print("Confirming alignment \n")
-print(len(midi_notes))
-print(len(velocities))
-
-midi_events = []
+print(midi_notes[:20])
