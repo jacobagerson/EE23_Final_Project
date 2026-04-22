@@ -1,11 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
-import seaborn as sns
+import os
+from datetime import datetime
 
 # -------------------------------
-# Load audio
+# Setup
 # -------------------------------
+os.makedirs("imgs", exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
 audio_file_path = 'Audio_Samples/ff-16b-2c-44100hz.mp3'
 y, sr = librosa.load(audio_file_path)
 
@@ -15,117 +19,80 @@ y, sr = librosa.load(audio_file_path)
 FFT_LENGTH = 2048
 HOP_LENGTH = 512
 
-stft_result = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
-S = np.abs(stft_result)
-
+S = np.abs(librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH))
 freqs = librosa.fft_frequencies(sr=sr, n_fft=FFT_LENGTH)
+
 times = np.arange(S.shape[1]) * (HOP_LENGTH / sr)
 
-# -------------------------------
 # Sort bins by magnitude
-# -------------------------------
 sorted_bins = np.argsort(S, axis=0)
 
 # -------------------------------
-# Rank bands (10 each)
+# Parameters
 # -------------------------------
-bands = [(i, i+10) for i in range(0, 100, 10)]
+BAND_SIZE = 50
+NUM_BANDS = 10   # 1–50, 51–100, ..., 451–500
 
 # -------------------------------
-# FIGURE 1: Time vs MIDI
+# Create figure
 # -------------------------------
-fig_time, axes_time = plt.subplots(
-    5, 2,
-    figsize=(12, 18),
-    constrained_layout=True
+fig, axes = plt.subplots(
+    NUM_BANDS, 1,
+    figsize=(12, 14),
+    sharex=True
 )
-axes_time = axes_time.flatten()
 
 # -------------------------------
-# FIGURE 2: KDE plots
+# Loop over bands
 # -------------------------------
-fig_kde, axes_kde = plt.subplots(
-    5, 2,
-    figsize=(12, 18),
-    constrained_layout=True
-)
-axes_kde = axes_kde.flatten()
+for b in range(NUM_BANDS):
 
-# -------------------------------
-# Loop through bands
-# -------------------------------
-for i, (low, high) in enumerate(bands):
+    low = b * BAND_SIZE
+    high = (b + 1) * BAND_SIZE
 
-    # Select band
+    # Extract bins for this band
     band_bins = sorted_bins[-high:-low if low != 0 else None, :]
     band_freqs = freqs[band_bins]
 
-    # Convert to MIDI
-    midi_notes = 69 + 12 * np.log2(band_freqs / 440.0)
-    midi_notes = np.nan_to_num(midi_notes)
-    midi_notes = np.round(midi_notes).astype(int)
+    # Convert to MIDI safely
+    safe = np.where(band_freqs <= 0, np.nan, band_freqs)
 
-    # -------------------------------
-    # PLOT 1: Time scatter (cleaned)
-    # -------------------------------
-    downsample = 10
+    midi = 69 + 12 * np.log2(safe / 440.0)
+    midi = np.nan_to_num(midi)
 
-    for k in [0, 4, 9]:  # representative ranks
-        axes_time[i].scatter(
-            times[::downsample],
-            midi_notes[k][::downsample],
-            s=3,
-            alpha=0.6,
-            label=f"Rank {low+k+1}"
-        )
+    # Plot heatmap
+    axes[b].imshow(
+        midi,
+        aspect='auto',
+        origin='lower',
+        extent=[times[0], times[-1], low+1, high],
+        cmap='viridis',
+        vmin=40,
+        vmax=100
+    )
 
-    axes_time[i].set_title(f"Rank {low+1}–{high}", fontsize=10, pad=10)
-    axes_time[i].set_ylim(0, 127)
-    axes_time[i].grid(True)
-
-    if i < 2:
-        axes_time[i].legend(fontsize=7)
-
-    # -------------------------------
-    # PLOT 2: KDE (cleaned)
-    # -------------------------------
-    colors = plt.cm.plasma(np.linspace(0, 1, band_freqs.shape[0]))
-
-    for k in [0, 4, 9]:  # representative ranks
-        sns.kdeplot(
-            band_freqs[k],
-            ax=axes_kde[i],
-            color=colors[k],
-            linewidth=2,
-            bw_adjust=0.6,
-            label=f"Rank {low+k+1}"
-        )
-
-    axes_kde[i].set_title(f"Rank {low+1}–{high}", fontsize=10, pad=10)
-    axes_kde[i].set_xlabel("Frequency (Hz)")
-    axes_kde[i].set_ylabel("Density")
-
-    if i < 2:
-        axes_kde[i].legend(fontsize=7)
+    # Side label instead of title
+    axes[b].set_ylabel(f"{low+1}-{high}", rotation=0, labelpad=30)
 
 # -------------------------------
-# Global labels
+# Clean formatting
 # -------------------------------
-fig_time.supxlabel("Time (seconds)")
-fig_time.supylabel("MIDI Note")
-fig_time.suptitle(
-    "Pitch Structure by Peak Rank (Bands of 10)",
-    fontsize=16,
-    y=1.02
+for ax in axes[:-1]:
+    ax.set_xticklabels([])
+
+axes[-1].set_xlabel("Time (seconds)")
+
+fig.suptitle("Pitch Structure by Rank Bands (50 per band)", fontsize=14)
+
+fig.tight_layout(rect=[0.08, 0, 1, 0.96])
+
+# -------------------------------
+# Save
+# -------------------------------
+fig.savefig(
+    f"imgs/rank_band_heatmap_{timestamp}.png",
+    dpi=150,
+    bbox_inches='tight'
 )
 
-fig_kde.suptitle(
-    "Frequency Distribution by Rank Band (KDE)",
-    fontsize=16,
-    y=1.02
-)
-
-# -------------------------------
-# Show plots
-# -------------------------------
 plt.show()
