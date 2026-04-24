@@ -80,6 +80,71 @@ plt.ylabel("MIDI Note")
 plt.title(f"Pitch (MIDI Notes) Over Time With {cuttoff_freq} Hz Cutoff")
 
 plt.grid(True)
-plt.show()
+#plt.show()
 
 midi_events = []
+
+for note, velocity in zip(midi_notes, velocities):
+    if velocity > 10:
+        event = [0x90, int(note), int(velocity)] # Note ON 
+    else:
+        event = [0x80, int(note), int(velocity)] #Note off
+    midi_events.append(event)
+
+# Create a MIDI file and add the events
+midi_file = mido.MidiFile()
+track = mido.MidiTrack()
+midi_file.tracks.append(track)
+
+#DUMB HUMAN IMPLEMENTATION - NOT TIMING CORRECT
+for j in midi_events:
+    track.append(mido.Message.from_bytes(j))
+    print(mido.Message.from_bytes(j))
+
+
+#AI SUGGESTED TIMING IMPLEMENTATION 
+# # --- 1. SETUP TIMING ---
+# # Standard MIDI defaults: 120 BPM
+# tempo = mido.bpm2tempo(120) 
+# ticks_per_beat = midi_file.ticks_per_beat
+
+# # Calculate how many seconds each STFT frame represents
+# seconds_per_frame = HOP_LENGTH / sr
+
+# # Convert those seconds into MIDI ticks
+# ticks_per_frame = mido.second2tick(seconds_per_frame, ticks_per_beat, tempo)
+
+# # --- 2. TRACK STATE AND ACCUMULATE TIME ---
+# active_note = None
+# accumulated_ticks = 0
+
+# for note, velocity in zip(midi_notes, velocities):
+#     # Determine the current note based on your velocity threshold
+#     current_note = int(note) if velocity > 10 else None
+
+#     # Check if the note has changed (a new pitch, a rest started, or a note ended)
+#     if current_note != active_note:
+        
+#         # Turn OFF the previous note if one was playing
+#         if active_note is not None:
+#             track.append(mido.Message('note_off', note=active_note, velocity=0, time=int(accumulated_ticks)))
+#             accumulated_ticks = 0 # Reset delta time immediately after sending a message
+        
+#         # Turn ON the new note
+#         if current_note is not None:
+#             track.append(mido.Message('note_on', note=current_note, velocity=int(velocity), time=int(accumulated_ticks)))
+#             accumulated_ticks = 0 # Reset delta time immediately after sending a message
+
+#         active_note = current_note
+
+#     # Advance time by one STFT frame for the next iteration
+#     accumulated_ticks += ticks_per_frame
+
+# # Turn off the very last note if it's still playing at the end of the audio file
+# if active_note is not None:
+#     track.append(mido.Message('note_off', note=active_note, velocity=0, time=int(accumulated_ticks)))
+
+
+# Save the file
+midi_file.save('output.mid')
+print("MIDI file saved successfully!")
