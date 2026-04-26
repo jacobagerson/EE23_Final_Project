@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define MAX_VOICES 40
+#define MAX_VOICES 20
 #define SAMPLE_RATE 40000.0f
 #define TWO_PI 6.28318530718f
 

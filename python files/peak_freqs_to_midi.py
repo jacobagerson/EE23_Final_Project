@@ -6,7 +6,7 @@ import mido
 import soundfile as sf
 
 #Extract audio file, using librosa to turn it into a numpy array
-audio_file_path = 'Audio_Samples/ff-16b-2c-44100hz.mp3'
+audio_file_path = 'Audio_Samples/best drum solo ever.mp3'
 filename = librosa.ex('trumpet')
 y, sr = librosa.load(audio_file_path) #y is librosa time domain series
 

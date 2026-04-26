@@ -6,7 +6,7 @@ import mido
 import soundfile as sf
 
 #Extract audio file, using librosa to turn it into a numpy array
-audio_file_path = 'Audio_Samples/ff-16b-2c-44100hz.mp3'
+audio_file_path = 'Audio_Samples/best drum solo ever.mp3'
 filename = librosa.ex('trumpet')
 y, sr = librosa.load(audio_file_path) #y is librosa time domain series
 
@@ -79,7 +79,7 @@ midi_events = []
 
 for note, velocity in zip(midi_notes, velocities):
     if velocity > 10:
-        event = [0x90, int(note), int(velocity)] # Note ON 
+        event = [0x90, int(note), int(velocity)] # Note ON
     else:
         event = [0x80, int(note), int(velocity)] #Note off
     midi_events.append(event)
@@ -95,10 +95,10 @@ for j in midi_events:
     print(mido.Message.from_bytes(j))
 
 
-#AI SUGGESTED TIMING IMPLEMENTATION 
+#AI SUGGESTED TIMING IMPLEMENTATION
 # # --- 1. SETUP TIMING ---
 # # Standard MIDI defaults: 120 BPM
-# tempo = mido.bpm2tempo(120) 
+# tempo = mido.bpm2tempo(120)
 # ticks_per_beat = midi_file.ticks_per_beat
 
 # # Calculate how many seconds each STFT frame represents
@@ -117,12 +117,12 @@ for j in midi_events:
 
 #     # Check if the note has changed (a new pitch, a rest started, or a note ended)
 #     if current_note != active_note:
-        
+
 #         # Turn OFF the previous note if one was playing
 #         if active_note is not None:
 #             track.append(mido.Message('note_off', note=active_note, velocity=0, time=int(accumulated_ticks)))
 #             accumulated_ticks = 0 # Reset delta time immediately after sending a message
-        
+
 #         # Turn ON the new note
 #         if current_note is not None:
 #             track.append(mido.Message('note_on', note=current_note, velocity=int(velocity), time=int(accumulated_ticks)))
@@ -139,5 +139,5 @@ for j in midi_events:
 
 
 # Save the file
-midi_file.save('output.mid')
+#midi_file.save('output.mid')
 print("MIDI file saved successfully!")
