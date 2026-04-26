@@ -18,52 +18,6 @@ void cycle_counter_init(void)
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-bool midi_read_message(uint8_t *words)
-{
-    const uint32_t bit_cycles = (SystemCoreClock + (MIDI_BAUD / 2U)) / MIDI_BAUD;
-    uint32_t frame = 0;
-    uint32_t sample_time = 0;
-
-    while (!gpio_read(A0))
-    {
-    }
-
-    while (gpio_read(A0))
-    {
-    }
-
-    sample_time = DWT->CYCCNT + (bit_cycles / 2U);
-
-    while ((int32_t)(DWT->CYCCNT - sample_time) < 0)
-    {
-    }
-
-    if (gpio_read(A0))
-    {
-        return false;
-    }
-
-    sample_time += bit_cycles;
-
-    for (uint8_t bit = 0; bit < MIDI_FRAME_BITS; bit++)
-    {
-        while ((int32_t)(DWT->CYCCNT - sample_time) < 0)
-        {
-        }
-
-        if (gpio_read(A0))
-        {
-            frame |= (1UL << bit);
-        }
-
-        sample_time += bit_cycles;
-    }
-
-    words[0] = extract_word(frame, 1);
-    words[1] = extract_word(frame, 11);
-    words[2] = extract_word(frame, 21);
-    return true;
-}
 
 /*
 // This is used by snprintf(); see below.

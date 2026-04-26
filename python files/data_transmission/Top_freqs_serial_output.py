@@ -3,106 +3,84 @@ import librosa
 import time
 import serial
 
-# ==============================
-# CONFIG
-# ==============================
-
 AUDIO_FILE = 'Audio_Samples/Austin Powers - Yeah baby yeah!!!.mp3'
+
 FFT_LENGTH = 2048
-HOP_LENGTH = 512
-TOP_N = 10
+HOP_LENGTH = 256
+TOP_N = 20
 
-COM_PORT = 'COM7'   # CHANGE THIS
-BAUD_RATE = 31250   # MIDI standard baud rate
-
-FRAME_DELAY = HOP_LENGTH / 44100.0  # seconds per frame
-
-# ==============================
-# INIT SERIAL
-# ==============================
+COM_PORT = 'COM7'
+BAUD_RATE = 31250
 
 ser = serial.Serial(COM_PORT, BAUD_RATE)
 
-# ==============================
-# LOAD AUDIO
-# ==============================
+y, sr = librosa.load(AUDIO_FILE, sr=None)
+FRAME_DELAY = HOP_LENGTH / sr
 
-y, sr = librosa.load(AUDIO_FILE)
-
-# ==============================
-# STFT
-# ==============================
-
-stft = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
+stft = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH, center=False)
 S = np.abs(stft)
-
 freqs = librosa.fft_frequencies(sr=sr, n_fft=FFT_LENGTH)
-
-# ==============================
-# MIDI HELPERS
-# ==============================
 
 def freq_to_midi(f):
     if f <= 0:
         return None
     return int(np.clip(librosa.hz_to_midi(f), 0, 127))
 
-def send_note_on(note, velocity=100):
-    msg = bytes([0x90, note, velocity])
-    ser.write(msg)
-    print(f"NOTE ON  | note={note:3d} vel={velocity:3d} | bytes={list(msg)}")
-
+def send_note_on(note, velocity):
+    ser.write(bytes([0x90, note, velocity]))
 
 def send_note_off(note):
-    msg = bytes([0x80, note, 0])
-    ser.write(msg)
-    print(f"NOTE OFF | note={note:3d} vel=  0 | bytes={list(msg)}")
+    ser.write(bytes([0x80, note, 0]))
 
-# ==============================
-# PROCESS + STREAM
-# ==============================
+active_notes = set()
 
-prev_notes = set()
+time.sleep(0.2)
 
 for t in range(S.shape[1]):
 
     mags = S[:, t].copy()
 
-    # kill high freq noise
-    mags[freqs > 400] = 0
+    mags[freqs > 4000] = 0
+    mags[freqs < 20] = 0
 
-    # top N peaks
-    peak_indices = np.argpartition(mags, -TOP_N)[-TOP_N:]
-    peak_indices = peak_indices[np.argsort(mags[peak_indices])[::-1]]
+    max_mag = np.max(mags) + 1e-9
+
+    idx = np.argsort(mags)[::-1]
 
     current_notes = set()
+    velocities = {}
 
-    for idx in peak_indices:
-        f = freqs[idx]
-        midi_note = freq_to_midi(f)
+    for i in idx:
+        f = freqs[i]
+        note = freq_to_midi(f)
 
-        if midi_note is not None:
-            current_notes.add(midi_note)
+        if note is None:
+            continue
 
-    # ==============================
-    # NOTE OFF (anything no longer active)
-    # ==============================
-    for note in prev_notes - current_notes:
+        mag = mags[i]
+
+        # ✅ CORRECT PER-NOTE VELOCITY
+        vel = int(np.clip(127 * (mag / max_mag), 20, 127))
+
+        current_notes.add(note)
+        velocities[note] = vel
+
+        if len(current_notes) >= TOP_N:
+            break
+
+    # NOTE OFF
+    for note in active_notes - current_notes:
         send_note_off(note)
 
-    # ==============================
-    # NOTE ON (new notes)
-    # ==============================
-    for note in current_notes - prev_notes:
-        send_note_on(note, velocity=100)
+    # NOTE ON
+    for note in current_notes - active_notes:
+        send_note_on(note, velocities[note])
 
-    prev_notes = current_notes
+    active_notes = current_notes
 
-    # simulate real-time playback
     time.sleep(FRAME_DELAY)
 
-# turn everything off at end
-for note in prev_notes:
+for note in active_notes:
     send_note_off(note)
 
 ser.close()

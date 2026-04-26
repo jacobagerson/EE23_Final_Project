@@ -46,11 +46,21 @@ FFT_LENGTH = 2048
 # It determines the time resolution of the spectrogram.
 # A common value is 512, which is FFT_LENGTH / 4.
 HOP_LENGTH = 512
+MAX_FREQ = 2000
 
 # It slides a window (like a Hann window) across the audio signal, taking brief FFTs at each step. This generates a 2D spectrogram (Frequency vs. Time), giving you both the pitch and the exact timestamp, which is absolutely required to generate accurate MIDI "Note ON" and "Note OFF" events. The STFT is a powerful tool for analyzing the frequency content of audio signals over time, making it ideal for tasks like pitch detection and transcription. Necessary for generating discrete MIDI events
 stft_result = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
 
-magnitude_spectrogram = np.abs(stft_result)
+magnitude_spectrogram = np.abs(stft_result)# Get frequency bins
+freqs = librosa.fft_frequencies(sr=sr, n_fft=FFT_LENGTH)
+
+# Create mask for allowed frequencies
+freq_mask = freqs <= MAX_FREQ
+
+# Apply mask
+magnitude_spectrogram = magnitude_spectrogram[freq_mask, :]
+freqs = freqs[freq_mask]
+
 db_spectrogram = librosa.amplitude_to_db(magnitude_spectrogram, ref=np.max)
 
 print("STFT complete. Shape of the complex-valued spectrogram:", stft_result.shape)
@@ -61,6 +71,7 @@ librosa.display.specshow(db_spectrogram, sr=sr, hop_length=HOP_LENGTH, x_axis='t
 plt.title('Log-Frequency Power Spectrogram')
 plt.xlabel('Time (s)')
 plt.ylabel('Frequency (Hz)')
+plt.ylim(0,MAX_FREQ)
 plt.colorbar(format='%+2.0f dB', label='Decibels (dB)')
 plt.tight_layout()
 plt.savefig('imgs/Austin_Powers_Clip/log_frequency_power_spectrogram_Austin_Powers.png', dpi=150, bbox_inches='tight')

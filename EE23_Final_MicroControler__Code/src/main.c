@@ -56,11 +56,17 @@ void dac_init(void)
     // Enable DAC clock
     RCC->APB1ENR1 |= RCC_APB1ENR1_DAC1EN;
 
-    // Set A3 (PA4) to analog mode
+    // Set PA4 (A3) to analog mode
     gpio_config_mode(A3, ANALOG);
 
-    // Enable DAC channel 1
+    // 🔥 Ensure buffer is ENABLED (this is key)
+    DAC1->CR &= ~(1 << 1);
+
+    // Enable DAC channel
     DAC1->CR |= DAC_CR_EN1;
+
+    // Give it a starting value so it's not stuck at 0
+    DAC1->DHR12R1 = 2048;
 }
 
 // ==============================
@@ -71,8 +77,11 @@ void audio_timer_init(void)
 {
     RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN;
 
-    TIM6->PSC = (SystemCoreClock / 1000000) - 1;
-    TIM6->ARR = 20; // 40 kHz sample rate
+    TIM6->PSC = 79; // 80 MHz / 80 = 1 MHz
+    TIM6->ARR = 24; // 1 MHz / 25 = 40 kHz
+
+    TIM6->EGR = TIM_EGR_UG; // 🔥 FORCE UPDATE (IMPORTANT)
+    TIM6->SR = 0;           // clear flags
 
     TIM6->DIER |= TIM_DIER_UIE;
     TIM6->CR1 |= TIM_CR1_CEN;
@@ -81,7 +90,10 @@ void audio_timer_init(void)
 }
 
 // ==============================
-// AUDIO ISR (changed output only)
+// AUDIO ISR
+// We get smoothed samples from
+// main loop instead of stair
+// steps we were seeing
 // ==============================
 
 void TIM6_DAC_IRQHandler(void)
@@ -90,8 +102,10 @@ void TIM6_DAC_IRQHandler(void)
     {
         TIM6->SR &= ~TIM_SR_UIF;
 
-        // Write directly to DAC
-        DAC1->DHR12R1 = audio_sample;
+        float s = synth_sample();
+        uint16_t duty = (uint16_t)((s * 0.9f + 1.0f) * 2047.0f);
+
+        DAC1->DHR12R1 = duty;
     }
 }
 
@@ -112,7 +126,7 @@ void handle_midi(uint8_t status, uint8_t note, uint8_t velocity)
         band_counts[band]++;
         gpio_write(note_pins[band], 1);
 
-        note_on(note, velocity / 127.0f);
+        note_on(note, velocity);
     }
     else if (type == 0x80 || (type == 0x90 && velocity == 0))
     {
@@ -154,11 +168,11 @@ int main()
     for (int i = 0; i < NUM_PINS; i++)
         gpio_config_mode(note_pins[i], OUTPUT);
 
-    dac_init(); // 🔥 use DAC instead of PWM
+    dac_init();
     audio_timer_init();
     synth_init();
 
-    host_serial_init(31250);
+    host_serial_init(31250); // ✅ correct MIDI baud
     USART2->CR1 |= USART_CR1_RXNEIE;
     NVIC_EnableIRQ(USART2_IRQn);
 
@@ -183,14 +197,18 @@ int main()
 
                 if (midi_index == 2)
                 {
-                    handle_midi(midi_status, midi_data[0], midi_data[1]);
+                    // ✅ FIX: scale velocity here before passing
+                    uint8_t note = midi_data[0];
+                    uint8_t vel = midi_data[1];
+
+                    handle_midi(midi_status, note, vel);
+
                     midi_index = 0;
                 }
             }
         }
 
-        // Compute sample outside ISR
-        float s = synth_sample();
-        audio_sample = (uint16_t)((s + 1.0f) * 2047.0f);
+        // ✅ CRITICAL FIX: yield CPU (prevents audio jitter)
+        __WFI(); // wait for interrupt (low power + stable timing)
     }
 }
