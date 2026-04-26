@@ -72,7 +72,7 @@ void audio_timer_init(void)
     RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN;
 
     TIM6->PSC = (SystemCoreClock / 1000000) - 1;
-    TIM6->ARR = 25;
+    TIM6->ARR = 20; // 40 kHz sample rate
 
     TIM6->DIER |= TIM_DIER_UIE;
     TIM6->CR1 |= TIM_CR1_CEN;
@@ -158,7 +158,7 @@ int main()
     audio_timer_init();
     synth_init();
 
-    host_serial_init(115200);
+    host_serial_init(31250);
     USART2->CR1 |= USART_CR1_RXNEIE;
     NVIC_EnableIRQ(USART2_IRQn);
 

@@ -7,13 +7,13 @@ import serial
 # CONFIG
 # ==============================
 
-AUDIO_FILE = 'Audio_Samples/ff-16b-2c-44100hz.mp3'
+AUDIO_FILE = 'Audio_Samples/Austin Powers - Yeah baby yeah!!!.mp3'
 FFT_LENGTH = 2048
 HOP_LENGTH = 512
-TOP_N = 50
+TOP_N = 10
 
 COM_PORT = 'COM7'   # CHANGE THIS
-BAUD_RATE = 115200   # MIDI standard baud rate
+BAUD_RATE = 31250   # MIDI standard baud rate
 
 FRAME_DELAY = HOP_LENGTH / 44100.0  # seconds per frame
 

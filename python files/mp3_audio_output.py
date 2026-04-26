@@ -6,7 +6,7 @@ import mido
 import soundfile as sf
 
 #Extract audio file, using librosa to turn it into a numpy array
-audio_file_path = 'Audio_Samples/ff-16b-2c-44100hz.mp3'
+audio_file_path = 'Audio_Samples/Austin Powers - Yeah baby yeah!!!.mp3'
 filename = librosa.ex('trumpet')
 y, sr = librosa.load(audio_file_path) #y is librosa time domain series
 
@@ -19,7 +19,7 @@ plt.title('Audio Waveform')
 plt.xlabel('Time (s)')
 plt.ylabel('Amplitude')
 plt.tight_layout()
-plt.savefig('imgs/time_domain_beginning_waveform.png', dpi=150, bbox_inches='tight')
+plt.savefig('imgs/Austin_Powers_Clip/time_domain_beginning_waveform_Austin_Powers.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 #Frequency Domain Plot
@@ -31,7 +31,7 @@ librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='log')
 plt.title('Spectrogram (Power Spectrum)')
 plt.colorbar(label='Power (dB)')
 plt.tight_layout()
-plt.savefig('imgs/frequency_domain_beginning_waveform.png', dpi=150, bbox_inches='tight')
+plt.savefig('imgs/Austin_Powers_Clip/frequency_domain_beginning_waveform_Austin_Powers.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 
@@ -63,5 +63,5 @@ plt.xlabel('Time (s)')
 plt.ylabel('Frequency (Hz)')
 plt.colorbar(format='%+2.0f dB', label='Decibels (dB)')
 plt.tight_layout()
-plt.savefig('imgs/log_frequency_power_spectrogram.png', dpi=150, bbox_inches='tight')
+plt.savefig('imgs/Austin_Powers_Clip/log_frequency_power_spectrogram_Austin_Powers.png', dpi=150, bbox_inches='tight')
 plt.show()
