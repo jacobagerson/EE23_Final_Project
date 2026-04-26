@@ -14,23 +14,17 @@ y, sr = librosa.load(audio_file_path) #y is librosa time domain series
 #PITCH - NOTE NUMBER
 
 #We have our audio file loaded and visualized. The frequency domain plot will now be used to gather appropriate MIDI "Note ON" and "Note OFF" events, which will be used to generate a MIDI file. The STFT spectrogram provides the necessary information to determine the pitch and timing of each note, allowing us to create an accurate MIDI representation of the original audio.
-
-
 FFT_LENGTH = 2048
-
 # hop_length: The number of audio samples between adjacent STFT columns.
 # It determines the time resolution of the spectrogram.
 # A common value is 512, which is FFT_LENGTH / 4.
 HOP_LENGTH = 512
 
 #Pitch detection:
-
 stft_result = librosa.stft(y, n_fft=FFT_LENGTH, hop_length=HOP_LENGTH)
 
 #librosa hz -> note conversion
-
 S = np.abs(stft_result)
-
 # Get frequencies corresponding to each bin
 freqs = librosa.fft_frequencies(sr=sr, n_fft=FFT_LENGTH)
 
@@ -42,13 +36,7 @@ S_valid = S[valid_idx, :]
 
 # Find the bin with the highest magnitude for each time frame
 peak_bins = np.argmax(S_valid, axis=0)
-
 peak_freqs = valid_frequencies[peak_bins]
-peak_mags = np.max(S_valid, axis=0)
-
-max_loudness = np.max(peak_mags)
-# Map to 0-127, round it, and ensure it's an integer
-velocities = np.clip(np.round((peak_mags / max_loudness) * 127), 0, 127).astype(int)
 
 notes = []
 
@@ -61,6 +49,11 @@ midi_notes = []
 for i in notes:
     midi_notes.append(librosa.note_to_midi(i))
 
+#Velocity detection: Spectral magnitudes for velocity mapping
+peak_mags = np.max(S_valid, axis=0)
+max_loudness = np.max(peak_mags)
+# Map to 0-127, round it, and ensure it's an integer
+velocities = np.clip(np.round((peak_mags / max_loudness) * 127), 0, 127).astype(int)
 
 for i in range(3000):
     print("midi note: ", str(midi_notes[i]))

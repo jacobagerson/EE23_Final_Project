@@ -2,6 +2,10 @@
 #include <stm32l432xx.h>
 #include "ee14lib.h"
 
+#define MIDI_BAUD 31250U
+#define MIDI_FRAME_BITS 30U
+
+
 static uint8_t extract_word(uint32_t frame, uint8_t start_bit)
 {
     return (uint8_t)((frame >> start_bit) & 0xFFU);

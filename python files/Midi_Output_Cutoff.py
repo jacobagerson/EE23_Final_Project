@@ -86,13 +86,6 @@ fig.suptitle("Pitch Structure by Rank Bands (50 per band)", fontsize=14)
 
 fig.tight_layout(rect=[0.08, 0, 1, 0.96])
 
-# -------------------------------
-# Save
-# -------------------------------
-fig.savefig(
-    f"imgs/rank_band_heatmap_{timestamp}.png",
-    dpi=150,
-    bbox_inches='tight'
-)
+
 
 plt.show()
