@@ -42,6 +42,8 @@ for t in range(S.shape[1]):
     max_mag = np.max(mags) + 1e-9
     idx = np.argsort(mags)[::-1]
 
+# 🔥 take bins ranked 21–40
+    idx = idx[20:40]
     current_notes = set()
     velocities = {}
 
