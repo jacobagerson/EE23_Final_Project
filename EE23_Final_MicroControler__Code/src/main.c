@@ -25,6 +25,7 @@ EE14Lib_Pin note_pins[NUM_PINS] = {
 volatile uint8_t rx_buf[RX_BUF_SIZE];
 volatile uint16_t rx_head = 0;
 volatile uint16_t rx_tail = 0;
+volatile int audio_tick = 0;
 
 static inline bool rx_available(void)
 {
@@ -92,6 +93,9 @@ void TIM6_DAC_IRQHandler(void)
     if (TIM6->SR & TIM_SR_UIF)
     {
         TIM6->SR &= ~TIM_SR_UIF;
+
+        audio_tick = 1; // 🔥 signal main loop
+
         DAC1->DHR12R1 = audio_sample;
     }
 }
@@ -164,6 +168,13 @@ int main()
 
     while (1)
     {
+        if (audio_tick)
+        {
+            audio_tick = 0;
+
+            float s = synth_sample();
+            audio_sample = (uint16_t)((s * 0.8f + 1.0f) * 2047.0f);
+        }
         // MIDI parsing
         while (rx_available())
         {
@@ -192,9 +203,5 @@ int main()
                 }
             }
         }
-
-        // synth compute (NOT in ISR)
-        float s = synth_sample();
-        audio_sample = (uint16_t)((s * 0.9f + 1.0f) * 2047.0f);
     }
 }
